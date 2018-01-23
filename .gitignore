@@ -1,1 +1,8 @@
+agdARGS
+agda-stdlib
+agdarsec
+build
+nix
+
+# Agda.gitignore
 *.agdai

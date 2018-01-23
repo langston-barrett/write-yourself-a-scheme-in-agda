@@ -1,0 +1,3 @@
+./agda-stdlib/standard-library.agda-lib
+./agdarsec/agdarsec.agda-lib
+./agdARGS/agdARGS.agda-lib
