@@ -19,14 +19,14 @@ with pkgs; stdenv.mkDerivation rec {
       git clone "https://github.com/$project" || true
     done
     # For some reason, there is an error that doesn't happen when called
-    # manually.
+    # manually: <stdout>: commitBuffer: invalid argument (invalid character)
     agda --library-file=./libraries \
          --library=standard-library \
          --library=agdarsec \
          --library=agdARGS \
          --compile-dir=build \
          -i "$PWD" \
-         -c scheme.agda
+         -c Main.agda
   '';
 
   meta = {
