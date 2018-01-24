@@ -26,7 +26,7 @@ with pkgs; stdenv.mkDerivation rec {
          --library=agdARGS \
          --compile-dir=build \
          -i "$PWD" \
-         -c Main.agda
+         -c Main.agda || true
   '';
 
   meta = {
