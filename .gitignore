@@ -3,6 +3,7 @@ agda-stdlib
 agdarsec
 build
 nix
+result
 
 # Agda.gitignore
 *.agdai
