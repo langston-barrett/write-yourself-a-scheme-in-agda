@@ -42,7 +42,7 @@ with pkgs; stdenv.mkDerivation rec {
   meta = {
     homepage = https://github.com/siddharthist/write-yourself-a-scheme-agda;
     description = "Like 'Write Yourself a Scheme in 48 Hours, but in Agda!";
-    license = stdenv.lib.licenses.mpl2;
+    license = stdenv.lib.licenses.mpl20;
     platforms = stdenv.lib.platforms.unix;
     maintainers = with stdenv.lib.maintainers; [ siddharthist ];
   };
