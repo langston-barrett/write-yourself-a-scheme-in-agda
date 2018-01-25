@@ -12,15 +12,15 @@ open import Data.Nat.Properties                 using (n≤1+n)
 open import Data.Product                        using (_×_ ; proj₁ ; proj₂)
 open import Data.String             as String   using (String ; toList ; _++_)
 open import Function                            using (_$_ ; _∘_ ; id ; const)
-open import Induction.Nat.Strong                using (fix)
+open import Induction.Nat.Strong                using (fix ; □_ ; extract)
 open import Level                               using (zero)
-open import Relation.Unary.Indexed              using ([_])
+open import Relation.Unary.Indexed              using ([_] ; _⟶_)
 open import Text.Parser.Char
 open import Text.Parser.Combinators
 open import Text.Parser.Numbers                 using (decimalℤ)
 open import Text.Parser.Success     as Success
 
-open import Util                    as Util     hiding (string ; atom ; integer)
+open import Util as Util hiding (atom ; integer ; list ; quoted ; string)
 
 -- ----------------- UTIL
 
@@ -45,6 +45,14 @@ parseit! parser str =
 many : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
       → [ Parser Char (∣List Char ∣≡_) Maybe String ]
 many parser = String.fromList <$> NonEmpty.toList <$> list⁺ parser
+
+-- TODO: add to combinators?
+module _ {A B : Set} where
+  -- sepBy : [ Parser Tok Toks M A ⟶ □ Parser Tok Toks M B ⟶ Parser Tok Toks M (List⁺ A) ]
+  sepBy : [ Parser Char (∣List Char ∣≡_) Maybe A
+          ⟶ □ Parser Char (∣List Char ∣≡_) Maybe B
+          ⟶ Parser Char (∣List Char ∣≡_) Maybe (List⁺ A) ]
+  sepBy pA pB = list⁺ (pA <&? pB)
 
 -- ----------------- SIMPLE
 
@@ -91,3 +99,21 @@ atom =
 
 integer : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 integer = Util.integer <$> decimalℤ
+
+-- Basic, unquoted, non-list expressions
+base-expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
+base-expr = integer <|> string <|> atom
+
+-- The above, with possible quotation
+maybe-quoted : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
+maybe-quoted = base-expr <|> Lisp.quoted <$> (exact '\'' &> (box base-expr))
+
+-- A list of expressions. Returns just the expression if there's only one.
+list : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
+list =
+  maybe-list <$> between (exact '(') (box $ exact ')')
+                         (box $ sepBy maybe-quoted $ box spaces)
+  where
+    maybe-list : List⁺ Lisp → Lisp
+    maybe-list (head List⁺.∷ tail) = 
+      if (List.null tail) then head else Lisp.list (head List⁺.∷ tail)

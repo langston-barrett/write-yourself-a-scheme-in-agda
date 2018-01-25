@@ -1,19 +1,21 @@
 module _ where
 
-open import Agda.Builtin.Equality                using (_≡_; refl)          -- ≡
-open import Data.Maybe               as Maybe    using (maybe′)
-open import Data.List.Sized         -- Sized instance for List A
-open import Text.Parser.Success      as Success
-open import Data.String              as String   hiding (_==_)
-open import Text.Parser.Char                     using (spaces)
+open import Agda.Builtin.Equality                using (_≡_; refl)
+open import Agda.Builtin.Int                     using (pos)
 open import Data.Bool                            using  (true ; false)
 open import Data.Char                as Char
-open import Data.Maybe               as Maybe
-open import Text.Parser.Combinators              using (Parser ; _&>_ ; box)
+open import Data.List                            using ([])
+open import Data.List.NonEmpty       as NonEmpty using (_∷_; _∷⁺_)
+open import Data.List.Sized                      hiding (list)
+open import Data.Maybe               as Maybe    using (Maybe ; maybe′)
+open import Data.String              as String   hiding (_==_)
 open import Relation.Unary.Indexed               using ([_])
+open import Text.Parser.Char                     using (spaces)
+open import Text.Parser.Combinators              using (Parser ; _&>_ ; box)
+open import Text.Parser.Success      as Success
 
 open import Main
-open import Util                     as Util     hiding (atom ; string)
+open import Util as Util hiding (atom ; integer ; list ; string)
 open import Parsers
 
 -- ---------------------------------------------- test functions
@@ -72,3 +74,14 @@ test₈ = refl
 -- TODO: see https://github.com/gallais/agdarsec/pull/5
 test₉ : test-parser atom "True" (Util.atom "True")
 test₉ = refl
+
+-- ---------------------------------------------- list
+
+-- Singletons are still treated as non-lists
+test₁₀ : fail! list "(asdf)"
+test₁₀ = refl
+-- test₁₀ : test-parser list "(asdf)" (Util.atom "asdf")
+-- test₁₀ = refl
+
+test₁₁ : test-parser list "(f true 10)" (Util.list (Util.atom "f" ∷⁺ (Util.bool true ∷⁺ (Util.integer (pos 10) ∷ []))))
+test₁₁ = refl
