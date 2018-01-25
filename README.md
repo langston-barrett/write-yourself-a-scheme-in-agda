@@ -5,6 +5,11 @@ learn [Agda](https://en.wikipedia.org/wiki/Agda_(programming_language)), and it
 seems that there aren't enough longer tutorials. I hope to someday document this
 excursion enough to make it worthy of its title.
 
+Note that this Scheme doesn't come nearly as close to the one in that Wikibook
+to being [R5RS](http://www.schemers.org/Documents/Standards/R5RS/HTML/)-compliant,
+I am more concerned about getting a somewhat working interpreter out the door
+than the accuracy of the "Scheme" it interprets.
+
 ## Installation
 
 ### Nix
