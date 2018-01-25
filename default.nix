@@ -16,6 +16,9 @@ with pkgs; stdenv.mkDerivation rec {
   ];
 
   buildPhase = ''
+    # Travis error: https://api.travis-ci.org/v3/job/333153489/log.txt
+    [[ -n $CI ]]; git config --global http.sslVerify false
+
     for project in "agda/agda-stdlib" "gallais/agdARGS" "gallais/agdarsec"; do
       git clone "https://github.com/$project" || true
     done
