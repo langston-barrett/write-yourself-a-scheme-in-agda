@@ -12,6 +12,7 @@ open import Data.Maybe              as Maybe
 open import Data.Nat.Properties                 using (n≤1+n)
 open import Data.Product                        using (_×_ ; proj₁ ; proj₂)
 open import Data.String             as String   using (String ; toList ; _++_)
+open import Data.Sum               as Sum       using (_⊎_ ; inj₁ ; inj₂)
 open import Function                            using (_$_ ; _∘_ ; id ; const)
 open import Induction.Nat.Strong                using (fix ; □_ ; extract)
 open import Level                               using (zero)
@@ -35,6 +36,7 @@ instance
   plusList : RawMonadPlus {zero} List.List
   plusList = List.monadPlus
 
+-- Just a version of runParser specialized to strings
 parseit! : {A B : Set} {M : Set → Set}
          → [ Parser A (∣List Char ∣≡_) M B ]
          → (str : String)
@@ -139,3 +141,10 @@ list = Lisp.list <$> between-parens (box $ sepBy maybe-quoted $ box spaces)
 
 expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 expr = maybe-quoted <|> list
+
+-- The main external interface
+parse : String → Error ⊎ Lisp
+parse str =
+  Sum.map err-parse (Success.value) $ maybe-to-eitherᵣ str (parseit! expr str)
+  where maybe-to-eitherᵣ : ∀ {A B} → B → Maybe A → B ⊎ A
+        maybe-to-eitherᵣ default = maybe′ inj₂ (inj₁ default)

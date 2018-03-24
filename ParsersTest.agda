@@ -87,7 +87,8 @@ _ = refl
 _ : test-parser atom "asdf" (Util.atom "asdf")
 _ = refl
 
--- TODO: see https://github.com/gallais/agdarsec/pull/5
+-- this should fail, we should only accept "true"
+-- needs agdarsec upgrade, see https://github.com/gallais/agdarsec/pull/5
 _ : test-parser atom "True" (Util.atom "True")
 _ = refl
 

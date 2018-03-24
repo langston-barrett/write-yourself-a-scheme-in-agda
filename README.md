@@ -48,3 +48,22 @@ This clones the following three libraries:
  * https://github.com/gallais/agdarsec
  
 and then compiles the main file.
+
+## Progress
+
+The following lists the parts of ["Write Yourself A Scheme"] and whether or not
+they're implemented:
+
+ - [x] First Steps: Compiling and running
+ - [x] Parsing
+ - [x] Evaluation, Part 1
+ - [ ] Error Checking and Exceptions
+ - [ ] Evaluation, Part 2
+ - [ ] Building a REPL: Basic I/O
+ - [ ] Adding Variables and Assignment: Mutable State in Haskell
+ - [ ] Defining Scheme Functions: Closures and Environments
+ - [ ] Creating IO Primitives: File I/O
+ - [ ] Towards a Standard Library: Fold and Unfold
+ - [ ] Conclusion & Further Resources
+
+[wyas]: https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours

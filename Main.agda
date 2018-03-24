@@ -17,6 +17,7 @@ open import agdARGS.System.Console.CLI.Usual
 open import agdARGS.System.Console.Modifiers
 open import agdARGS.System.Console.Options.Usual as Usual hiding (Parser; string)
 
+open import Eval
 open import Parsers
 open import Util
 
@@ -27,15 +28,16 @@ module Main where
     ; exec = record
     { description  = "Scheme, in Agda!"
     ; subcommands  = noSubCommands
-    ; modifiers   = , "-O"        ∷= flag "deprecated"
-                    ⟨ "--help"    ∷= flag "Display this help"
-                    ⟨ "--version" ∷= flag "Output version information and exit"
+    ; modifiers   = , "-O"           ∷= flag "deprecated"
+                    ⟨ "--help"       ∷= flag "Display this help"
+                    ⟨ "--parse-only" ∷= flag "Parse but don't execute"
+                    ⟨ "--version"    ∷= flag "Output version information and exit"
                     ⟨ ⟨⟩
     ; arguments    = Usual.string -- lotsOf filePath
     }
     }
 
-  -- TODO: use Either
+  -- TODO: use Sum, Parsers.parse
   -- "real main", moved out of IO for better unit testing
   realMain : String → String
   realMain args =
