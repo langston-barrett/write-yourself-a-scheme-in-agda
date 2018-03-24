@@ -4,7 +4,7 @@ open import Agda.Builtin.Char                    using (primIsSpace)
 open import Agda.Builtin.Equality                using (_≡_ ; refl)
 open import Data.Char                as Char     using (show)
 open import Data.Maybe               as Maybe    using (maybe′)
-open import Data.String              as String   using (String)
+open import Data.String              as String   using (String ; _++_)
 open import Function                             using (_$_ ; _∘_ ; id ; const)
 open import Text.Parser.Success      as Success
 
@@ -18,6 +18,7 @@ open import agdARGS.System.Console.Modifiers
 open import agdARGS.System.Console.Options.Usual as Usual hiding (Parser; string)
 
 open import Parsers
+open import Util
 
 module Main where
   cli : CLI _
@@ -34,13 +35,16 @@ module Main where
     }
     }
 
-  -- TODO: improve both of these
+  -- TODO: use Either
   -- "real main", moved out of IO for better unit testing
-  io : ParsedInterface cli → String
-  io (subCommand () _)
-  io (theCommand _  a) =
-    maybe′ (Char.show ∘ Success.value) "No parse"
-          (Parsers.parseit! Parsers.symbol
-                            (maybe′ id "" a)) -- TODO: error on lack of parse
+  realMain : String → String
+  realMain args =
+    maybe′ (Util.show ∘ Success.value) ("[ERR] No parse: " ++ args)
+           (Parsers.parseit! Parsers.expr args)
 
-  main = withCLI cli (putStrLn ∘ io)
+  main : _
+  main = withCLI cli (putStrLn ∘ maybe′ realMain "[ERR] Bad arguments!" ∘ helper)
+    where
+      helper : ParsedInterface cli → Maybe.Maybe String
+      helper (subCommand () _)
+      helper (theCommand _ parsedArgs) = parsedArgs

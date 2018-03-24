@@ -2,11 +2,12 @@ module Parsers where
 
 open import Agda.Builtin.Char                   using (primIsSpace)
 open import Category.Monad                      using (RawMonadPlus)
-open import Data.Bool               as Bool     using  (not ; if_then_else_)
+open import Data.Bool               as Bool     using  (not ; if_then_else_ ; _∨_)
 open import Data.Char               as Char
 open import Data.List               as List     hiding ([_] ; _++_)
 open import Data.List.NonEmpty      as NonEmpty using (List⁺ ; toList)
 open import Data.List.Sized         as Sized    hiding (list; map)
+open import Data.List.Sized.Interface           using (Sized)
 open import Data.Maybe              as Maybe
 open import Data.Nat.Properties                 using (n≤1+n)
 open import Data.Product                        using (_×_ ; proj₁ ; proj₂)
@@ -15,6 +16,7 @@ open import Function                            using (_$_ ; _∘_ ; id ; const)
 open import Induction.Nat.Strong                using (fix ; □_ ; extract)
 open import Level                               using (zero)
 open import Relation.Unary.Indexed              using ([_] ; _⟶_)
+open import Size
 open import Text.Parser.Char
 open import Text.Parser.Combinators
 open import Text.Parser.Numbers                 using (decimalℤ)
@@ -42,17 +44,27 @@ parseit! parser str =
 
 -- ----------------- COMBINATORS
 
-many : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
-      → [ Parser Char (∣List Char ∣≡_) Maybe String ]
-many parser = String.fromList <$> NonEmpty.toList <$> list⁺ parser
+module _ {M : Set → Set} {{𝕄 : RawMonadPlus M}} where
+  many : [ Parser Char (∣List Char ∣≡_) M Char ]
+        → [ Parser Char (∣List Char ∣≡_) M String ]
+  many parser = String.fromList <$> NonEmpty.toList <$> list⁺ parser
 
 -- TODO: add to combinators?
-module _ {A B : Set} where
-  -- sepBy : [ Parser Tok Toks M A ⟶ □ Parser Tok Toks M B ⟶ Parser Tok Toks M (List⁺ A) ]
-  sepBy : [ Parser Char (∣List Char ∣≡_) Maybe A
-          ⟶ □ Parser Char (∣List Char ∣≡_) Maybe B
-          ⟶ Parser Char (∣List Char ∣≡_) Maybe (List⁺ A) ]
-  sepBy pA pB = list⁺ (pA <&? pB)
+
+module _ {Tok : Set} {Toks : _} {{𝕊 : Sized Tok Toks}}
+    {M : Set → Set} {{𝕄 : RawMonadPlus M}} where
+
+  module _ {A B : Set} where
+    sepBy : [ Parser Tok Toks M A ⟶ □ Parser Tok Toks M B
+            ⟶ Parser Tok Toks M (List⁺ A) ]
+    sepBy pA pB = list⁺ (pA <&? pB)
+
+  -- TODO: https://github.com/agda/agda-stdlib/issues/220#issuecomment-360480024
+  -- except : List Tok → [ Parser Tok Toks M Char ]
+  -- except toks = guard (λ c → not ∈ toks) anyTok
+  --   where
+  --     _∈_ : ∀ {l} {A : Set l} → A → (Decidable {A = A} (λ y → x ≡ y)) → A → Bool
+  --     _∈_ {_} {_} {dec} x xs = ⌊ any dec (λ y → y ≡ x) ⌋
 
 -- ----------------- SIMPLE
 
@@ -64,16 +76,29 @@ symbol = anyOf $ String.toList "!#$%&|*+-/:<=>?@^_~"
 not-space : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
 not-space = guard (λ c → not (primIsSpace c)) anyTok
 
--- A lone double quotation mark
-quot : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
-quot = exact '"'
+-- Anything that isn't a whitespace character
+not-space-or-paren : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
+not-space-or-paren = guard (λ c → (not (primIsSpace c)) ∨ (c == ')')) anyTok
+
+-- A parser wedged between two characters, like "", [], (), {}, ``, etc.
+between-chars : ∀ {A} → Char → Char → [ □ Parser Char (∣List Char ∣≡_) Maybe A
+                                      ⟶ Parser Char _ Maybe A ]
+between-chars c₁ c₂ = between (exact c₁) (box $ exact c₂)
+
+-- Something between quote marks
+between-quotes : ∀ {A} → [ □ Parser _ _ _ A ⟶ Parser _ _ _ A ]
+between-quotes = between-chars '"' '"'
+
+-- Something between parentheses
+between-parens : ∀ {A} → [ □ Parser _ _ _ A ⟶ Parser _ _ _ A ]
+between-parens = between-chars '(' ')'
 
 -- ----------------- SPECIALIZED
 
 string : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 string =
   fix (Parser _ _ _ _) $
-    λ rec → Lisp.string <$> between quot (box quot) (box valid-string)
+    λ rec → Lisp.string <$> between-quotes (box valid-string)
   where
     -- A valid string is anything not containing a double quote
     valid-string : [ Parser Char (∣List Char ∣≡_) Maybe String ]
@@ -91,7 +116,7 @@ atom =
     -- The head of an identifier must be a letter or symbol, after that,
     -- anything (non-whitespace) goes.
     pair : [ Parser Char (∣List Char ∣≡_) Maybe (Char × Maybe String) ]
-    pair = (alpha <|> symbol) &?>>= (const $ box $ many $ not-space)
+    pair = (alpha <|> symbol) &?>>= (const $ box $ many (alpha <|> symbol))
     -- Combine the output of pair into a string
     head&tail : (Char × Maybe String) → String
     head&tail pair =
@@ -108,12 +133,9 @@ base-expr = integer <|> string <|> atom
 maybe-quoted : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 maybe-quoted = base-expr <|> Lisp.quoted <$> (exact '\'' &> (box base-expr))
 
--- A list of expressions. Returns just the expression if there's only one.
+-- A list of expressions
 list : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
-list =
-  maybe-list <$> between (exact '(') (box $ exact ')')
-                         (box $ sepBy maybe-quoted $ box spaces)
-  where
-    maybe-list : List⁺ Lisp → Lisp
-    maybe-list (head List⁺.∷ tail) = 
-      if (List.null tail) then head else Lisp.list (head List⁺.∷ tail)
+list = Lisp.list <$> between-parens (box $ sepBy maybe-quoted $ box spaces)
+
+expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
+expr = maybe-quoted <|> list
