@@ -45,11 +45,19 @@ module LispM where
 
 -- Any error whatsoever
 data Error : Set where
-  err-ap         : String → Error
   err-parse      : String → Error
   err-noargs     : String → Error -- function applied to no arguments
   err-undefined  : String → Error
   err-type       : String → String → Error  -- expected, actual
+
+show-error : Error → String
+show-error (err-parse str)    = "[ERR] No parse: " ++ str
+show-error (err-noargs fun)   = "[ERR] Function called with no args: " ++ fun
+show-error (err-undefined u)  = "[ERR] Undefined: " ++ u
+show-error (err-type exp act) = "[ERR]: Expected " ++ exp ++ ", found " ++ act
+
+errorOr : ∀ {a} (A : Set a) → (Set a)
+errorOr t = Error ⊎ t
 
 -- ----------------- CASTS
 

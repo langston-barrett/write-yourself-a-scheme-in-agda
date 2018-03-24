@@ -1,15 +1,15 @@
 module Main where
 
-open import Agda.Builtin.Char                    using (primIsSpace)
 open import Agda.Builtin.Equality                using (_≡_ ; refl)
-open import Data.Char                as Char     using (show)
 open import Data.Maybe               as Maybe    using (maybe′)
 open import Data.String              as String   using (String ; _++_)
-open import Function                             using (_$_ ; _∘_ ; id ; const)
+open import Data.Sum                             using ([_,_]′)
+open import Function                             using (_$_ ; _∘_ ; id )
 open import Text.Parser.Success      as Success
+open import Level
 
 -- CLI Imports
-open import IO
+open import IO                                   hiding (_>>=_)
 open import Data.Product
 open import agdARGS.System.Console.CLI hiding ([_)
 open import agdARGS.System.Console.CLI.Usage
@@ -19,6 +19,7 @@ open import agdARGS.System.Console.Options.Usual as Usual hiding (Parser; string
 
 open import Eval
 open import Parsers
+open import SumUtil
 open import Util
 
 module Main where
@@ -40,9 +41,7 @@ module Main where
   -- TODO: use Sum, Parsers.parse
   -- "real main", moved out of IO for better unit testing
   realMain : String → String
-  realMain args =
-    maybe′ (Util.show ∘ Success.value) ("[ERR] No parse: " ++ args)
-           (Parsers.parseit! Parsers.expr args)
+  realMain args = [ show-error , show ]′ (parse args >>= eval)
 
   main : _
   main = withCLI cli (putStrLn ∘ maybe′ realMain "[ERR] Bad arguments!" ∘ helper)

@@ -57,7 +57,7 @@ they're implemented:
  - [x] First Steps: Compiling and running
  - [x] Parsing
  - [x] Evaluation, Part 1
- - [ ] Error Checking and Exceptions
+ - [x] Error Checking and Exceptions
  - [ ] Evaluation, Part 2
  - [ ] Building a REPL: Basic I/O
  - [ ] Adding Variables and Assignment: Mutable State in Haskell

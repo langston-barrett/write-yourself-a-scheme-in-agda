@@ -11,16 +11,12 @@ open import Level
 
 open import Eval
 open import Parsers                             hiding (atom ; list ; integer)
+open import SumUtil
 open import Util
 
 open ℤ
 
--- TODO: https://github.com/agda/agda-stdlib/pull/221
-_>>=_ : ∀ {a b c : Level} {A : Set a} {B : Set b} {C : Set c}
-      → (A ⊎ B) → (B → A ⊎ C) → (A ⊎ C)
-_>>=_  = λ x f → [ inj₁ , f ]′ x
-
-show∘eval∘parse : String → Error ⊎ String
+show∘eval∘parse : String → errorOr String
 show∘eval∘parse str = show <$⊎> (parse str >>= eval)
 
 _ : eval (atom "str") ≡ inj₂ (atom "str")
