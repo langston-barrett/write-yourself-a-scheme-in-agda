@@ -15,7 +15,7 @@ open import Text.Parser.Char                     using  (spaces)
 open import Text.Parser.Combinators              using  (Parser ; _&>_ ; box)
 open import Text.Parser.Success      as Success
 
-open import Util as Util hiding (atom ; integer ; list ; string)
+open import Language as Language hiding (atom ; integer ; list ; string)
 open import Parsers
 
 -- ---------------------------------------------- test functions
@@ -63,7 +63,7 @@ _ = refl
 
 -- ---------------------------------------------- string
 
-_ : test-parser string "\"str⊕\"" (Util.string "str⊕")
+_ : test-parser string "\"str⊕\"" (Language.string "str⊕")
 _ = refl
 
 -- fails on wrong quotation
@@ -78,18 +78,21 @@ _ = refl
 _ : test-parser atom "true" (bool true)
 _ = refl
 
-_ : test-parser atom "t" (Util.atom "t")
+_ : test-parser atom "t" (Language.atom "t")
 _ = refl
 
 _ : fail! atom "9"
 _ = refl
 
-_ : test-parser atom "asdf" (Util.atom "asdf")
+_ : test-parser atom "asdf" (Language.atom "asdf")
+_ = refl
+
+_ : test-parser atom "=" (Language.atom "=")
 _ = refl
 
 -- this should fail, we should only accept "true"
 -- needs agdarsec upgrade, see https://github.com/gallais/agdarsec/pull/5
-_ : test-parser atom "True" (Util.atom "True")
+_ : test-parser atom "True" (Language.atom "True")
 _ = refl
 
 -- ---------------------------------------------- list
@@ -103,27 +106,19 @@ open import Data.List.NonEmpty hiding ([_])
 p : [ Parser Char (∣List Char ∣≡_) Maybe (List⁺ Lisp) ]
 p = sepBy maybe-quoted $ box spaces
 
-_ : test-parser list "(5 5)"
-                (Util.list (Util.integer (pos 5) ∷⁺ (Util.integer (pos 5) ∷ [])))
-_ = refl
-
-_ : test-parser list "(true false)"
-                (Util.list (Util.bool true ∷⁺ (Util.bool false ∷ [])))
-_ = refl
-
-_ : test-parser list "(f true 10)"
-                (Util.list
-                  (Util.atom "f" ∷⁺ (Util.bool true ∷⁺ (Util.integer (pos 10) ∷ []))))
-_ = refl
-
 -- ---------------------------------------------- expr
 
-_ : test-parser expr "(f true 10)" (Util.list (Util.atom "f" ∷⁺ (Util.bool true ∷⁺ (Util.integer (pos 10) ∷ []))))
+_ : test-parser expr "(f true 10)" (Language.list (Language.atom "f" ∷⁺ (Language.bool true ∷⁺ (Language.integer (pos 10) ∷ []))))
 _ = refl
 
-_ : test-parser expr "\"str\"" (Util.string "str")
+_ : test-parser expr "\"str\"" (Language.string "str")
 _ = refl
 
-_ : test-parser expr "(false true)" (Util.list (Util.bool false ∷⁺ (Util.bool true ∷ [])))
+_ : test-parser expr "(false (false true))" (Language.list (Language.bool false ∷⁺ Language.list (Language.bool false ∷⁺ (Language.bool true ∷ [])) ∷ []))
 _ = refl
 
+_ : test-parser expr "(= 2 3)" (Language.list (Language.atom "=" ∷⁺ (Language.integer (pos 2) ∷⁺ (Language.integer (pos 3) ∷ []))))
+_ = refl
+
+_ : test-parser expr "(- 1 2 3)" (Language.list (Language.atom "-" ∷⁺ (Language.integer (pos 1) ∷⁺ (Language.integer (pos 2) ∷⁺ (Language.integer (pos 3) ∷ [])))))
+_ = refl

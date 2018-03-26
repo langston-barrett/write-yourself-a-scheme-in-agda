@@ -1,14 +1,20 @@
-module Util where
+module Language where
 
-open import Function                            using    (id)
-open import Data.List                           using    (List ; _∷_)
-open import Data.List.NonEmpty
+open import Function                            using    (id ; _∘_)
+open import Data.List                           using    (List ; _∷_ ; map ; [])
+open import Data.List.NonEmpty                  renaming (map to map⁺)
 open import Data.Integer             as Integer using    (ℤ)
-open import Data.Bool                as Bool
+open import Data.Bool                as Bool    hiding   (_≟_)
 open import Data.Bool.Show                      renaming (show to Bool-show)
 open import Data.String              as String  using    (String ; _++_)
 open import Data.Sum                 as Sum     using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
+open import Data.Product             as Product using (proj₁ ; proj₂ ; _,_ ; _×_)
+open import Relation.Nullary.Decidable          using (⌊_⌋)
+open import Level
 open import Size
+
+open import Error
+open import SumUtil
 
 -- ----------------- LANGUAGE
 
@@ -32,6 +38,8 @@ module LispM where
     -- enhancement this should be made into vectors of length > 1
     list        : ∀ {j : Size< i} → List⁺ (Lisp {j}) → Lisp
 
+  -- ----------------- SHOW
+
   show : ∀ {i} → Lisp {i} → String
   show (atom s)             = s
   show (bool b)             = Bool-show b
@@ -39,29 +47,32 @@ module LispM where
   show (quoted x)           = "'" ++ show x
   show (string x)           = "\"" ++ x ++ "\""
   show (list lst) =
-    "(" ++ (foldr (λ hd acc → hd ++ " " ++ acc) id (map show lst)) ++ ")"
+    "(" ++ (foldr (λ hd acc → hd ++ " " ++ acc) id (map⁺ show lst)) ++ ")"
 
--- ----------------- ERRORS
+  -- ----------------- EQUALITY
 
--- Any error whatsoever
-data Error : Set where
-  err-parse      : String → Error
-  err-noargs     : String → Error -- function applied to no arguments
-  err-undefined  : String → Error
-  err-type       : String → String → Error  -- expected, actual
-
-show-error : Error → String
-show-error (err-parse str)    = "[ERR] No parse: " ++ str
-show-error (err-noargs fun)   = "[ERR] Function called with no args: " ++ fun
-show-error (err-undefined u)  = "[ERR] Undefined: " ++ u
-show-error (err-type exp act) = "[ERR]: Expected " ++ exp ++ ", found " ++ act
-
-errorOr : ∀ {a} (A : Set a) → (Set a)
-errorOr t = Error ⊎ t
+  -- TODO: make this a proper decidable relation as in stdlib
+  _≟_ : ∀ {i} → Lisp {i} → Lisp {i} → Bool
+  _≟_ (atom    x) (atom    y) = ⌊ String._≟_  x y ⌋
+  _≟_ (bool    x) (bool    y) = ⌊ Bool._≟_    x y ⌋
+  _≟_ (integer x) (integer y) = ⌊ Integer._≟_ x y ⌋
+  _≟_ (string  x) (string  y) = ⌊ String._≟_  x y ⌋
+  _≟_ (quoted  x) (quoted  y) = x ≟ y
+  -- ---------- Lists
+  _≟_ (list (hd₁ ∷ []))         (list    (hd₂ ∷ []))  = hd₁ ≟ hd₂
+  _≟_ (list (hd₁ ∷ (hd₂ ∷ tl₁))) (list    (hd₃ ∷ tl₂)) = false -- TODO
+  -- hd₁ ≟ hd₂ ∧ (Lisp.list (hd₂ ∷ tl₁) ≟ Lisp.list (hd₃ ∷ tl₂))
+  _≟_ _ _ = false -- all other combinations don't make sense
 
 -- ----------------- CASTS
 
 -- Casts from Lisp to a specific type
+
+cast : ∀ {a} → Set a → Set a
+cast T = LispM.Lisp → errorOr T
+
+castM : ∀ {a} → (M : Set → Set a) → Set → Set a
+castM M T = M LispM.Lisp → errorOr (M T)
 
 module Cast where
 
@@ -73,12 +84,24 @@ module Cast where
   constructor-name (LispM.quoted x)  = "quoted"
   constructor-name (LispM.list x)    = "list"
 
-  integer : LispM.Lisp → Error ⊎ ℤ
+  integer : cast ℤ
   integer (LispM.integer x) = inj₂ x
-  integer x                = inj₁ (err-type "integer" (constructor-name x))
+  integer x                 = inj₁ (err-type "integer" (constructor-name x))
 
-  bool : LispM.Lisp → Error ⊎ Bool
+  bool : cast Bool
   bool (LispM.bool x) = inj₂ x
   bool x             = inj₁ (err-type "bool" (constructor-name x))
+
+  list : ∀ {A : Set} → cast A → castM List A
+  list c = sequenceᵣ ∘ (map c)
+
+  list⁺ : ∀ {A : Set} → cast A → castM List⁺ A
+  list⁺ c = sequenceᵣ⁺ ∘ (map⁺ c)
+
+  integers : castM List ℤ
+  integers = list integer
+
+  integers⁺ : castM List⁺ ℤ
+  integers⁺ = list⁺ integer
 
 open LispM public

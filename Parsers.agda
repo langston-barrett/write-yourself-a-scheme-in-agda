@@ -12,9 +12,9 @@ open import Data.Maybe              as Maybe
 open import Data.Nat.Properties                 using (n≤1+n)
 open import Data.Product                        using (_×_ ; proj₁ ; proj₂)
 open import Data.String             as String   using (String ; toList ; _++_)
-open import Data.Sum               as Sum       using (_⊎_ ; inj₁ ; inj₂)
+open import Data.Sum                as Sum      using (_⊎_ ; inj₁ ; inj₂)
 open import Function                            using (_$_ ; _∘_ ; id ; const)
-open import Induction.Nat.Strong                using (fix ; □_ ; extract)
+open import Induction.Nat.Strong    as Strong   using (fix ; □_ ; extract)
 open import Level                               using (zero)
 open import Relation.Unary.Indexed              using ([_] ; _⟶_)
 open import Size
@@ -23,7 +23,8 @@ open import Text.Parser.Combinators
 open import Text.Parser.Numbers                 using (decimalℤ)
 open import Text.Parser.Success     as Success
 
-open import Util as Util hiding (atom ; integer ; list ; quoted ; string)
+open import Error
+open import Language as Language hiding (atom ; integer ; list ; quoted ; string)
 
 -- ----------------- UTIL
 
@@ -125,7 +126,7 @@ atom =
       String.fromList (proj₁ pair ∷ []) ++ (maybe′ id "" $ proj₂ pair)
 
 integer : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
-integer = Util.integer <$> decimalℤ
+integer = Language.integer <$> decimalℤ
 
 -- Basic, unquoted, non-list expressions
 base-expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
@@ -135,15 +136,13 @@ base-expr = integer <|> string <|> atom
 maybe-quoted : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 maybe-quoted = base-expr <|> Lisp.quoted <$> (exact '\'' &> (box base-expr))
 
--- A list of expressions
-list : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
-list = Lisp.list <$> between-parens (box $ sepBy maybe-quoted $ box spaces)
-
 expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
-expr = maybe-quoted <|> list
+expr = fix (Parser Char (∣List Char ∣≡_) Maybe Lisp) $ λ rec →
+  maybe-quoted
+  <|> Lisp.list <$> between-parens (Strong.map (λ p → sepBy p (box spaces)) rec)
 
 -- The main external interface
-parse : String → Error ⊎ Lisp
+parse : String → errorOr Lisp
 parse str =
   Sum.map err-parse (Success.value) $ maybe-to-eitherᵣ str (parseit! expr str)
   where maybe-to-eitherᵣ : ∀ {A B} → B → Maybe A → B ⊎ A

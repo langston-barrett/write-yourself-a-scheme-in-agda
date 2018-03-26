@@ -9,16 +9,18 @@ open import Category.Functor         as Functor  using  (RawFunctor)
 open import Text.Parser.Success      as Success
 
 open import Parsers
-open import Util
+open import Language
 
 open RawFunctor
+
+-- TODO: all these tests should go in TestParse
 
 -- parse something, then show it
 show∘parse : String → Maybe String
 show∘parse args =
   RawFunctor._<$>_
     Maybe.functor
-    (Util.show ∘ Success.value) (Parsers.parseit! Parsers.expr args)
+    (Language.show ∘ Success.value) (Parsers.parseit! Parsers.expr args)
 
 -- make sure show∘parse = id
 test-show∘parse : String → Set
