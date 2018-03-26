@@ -1,5 +1,6 @@
 module Eval where
 
+open import Category.Functor
 open import Category.Monad
 open import Data.Bool           as Bool      hiding (_≟_)
 open import Data.Integer        as Integer   using (ℤ ; _+_ ; _-_)
@@ -81,5 +82,6 @@ eval : ∀ {i} → Lisp {i} → errorOr Lisp
 eval (quoted x)                     = inj₂ x
 eval (atom x)                       = inj₂ $ atom x
 eval (list (atom fun ∷ []))         = inj₁ (err-noargs fun) -- this could be avoided
-eval (list (atom fun ∷ arg ∷ args)) = apply fun (arg ∷ args)
+eval (list (atom fun ∷ arg ∷ args)) = (sequenceᵣ⁺ $ map⁺ eval (arg ∷ args)) >>= apply fun
+  where open RawMonad (monadₗ Error _)
 eval x                              = inj₂ x -- string, int, bool

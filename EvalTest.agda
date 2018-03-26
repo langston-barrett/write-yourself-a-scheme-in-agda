@@ -36,7 +36,7 @@ _ = refl
 _ : show∘eval∘parse "(+ 2 2)" ≡ inj₂ "4"
 _ = refl
 
-_ : show∘eval∘parse "(= 3 3)" ≡ inj₂ "true"
+_ : show∘eval∘parse "(= 4 4)" ≡ inj₂ "true"
 _ = refl
 
 -- TODO
