@@ -18,8 +18,8 @@ seems that there aren't enough longer tutorials.
 
 ## Progress
 
-The following lists the parts of ["Write Yourself A Scheme"] and whether or not
-they're implemented:
+The following lists the parts of ["Write Yourself A Scheme"][wyas] and whether
+or not they're implemented:
 
  - [x] First Steps: Compiling and running
  - [x] Parsing
