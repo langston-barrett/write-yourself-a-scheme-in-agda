@@ -2,7 +2,7 @@ module _ where
 
 open import Agda.Builtin.Equality               using  (_≡_; refl)
 open import Category.Functor
-open import Category.Monad
+open import Category.Monad                      using (RawMonad)
 open import Data.Integer           as Integer   using (ℤ)
 open import Data.List              as List      using (List ; [] ; _∷_)
 open import Data.List.NonEmpty     as NonEmpty
@@ -26,7 +26,7 @@ show∘eval∘parse str = show <$> (parse str >>= eval)
 _ : eval (atom "str") ≡ inj₂ (atom "str")
 _ = refl
 
-_ : eval (list $ (atom "fun") ∷ []) ≡ inj₁ (err-noargs "fun")
+_ : eval (list $ (atom "fun") ∷ []) ≡ inj₁ (err-arity₀ "fun")
 _ = refl
 
 _ : eval (list $ (atom "+") ∷ (integer (pos 5)) ∷ ((integer (pos 5)) ∷ [])) ≡
@@ -39,6 +39,20 @@ _ = refl
 _ : show∘eval∘parse "(= 4 4)" ≡ inj₂ "true"
 _ = refl
 
--- TODO
 _ : show∘eval∘parse "(= (+ 2 2) 4)" ≡ inj₂ "true"
+_ = refl
+
+_ : show∘eval∘parse "(≤ 2 3 4)" ≡ inj₂ "true"
+_ = refl
+
+_ : show∘eval∘parse "(≤ 4 3 4)" ≡ inj₂ "false"
+_ = refl
+
+_ : show∘eval∘parse "(if true true false)" ≡ inj₂ "true"
+_ = refl
+
+_ : show∘eval∘parse "(if (≤ 2 5) false true)" ≡ inj₂ "false"
+_ = refl
+
+_ : show∘eval∘parse "(if (≤ 2 5) true true true)" ≡ inj₂ "false"
 _ = refl

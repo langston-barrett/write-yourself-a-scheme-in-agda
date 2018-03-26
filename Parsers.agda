@@ -73,8 +73,8 @@ module _ {Tok : Set} {Toks : _} {{𝕊 : Sized Tok Toks}}
 
 -- Valid symbols to begin identifiers
 symbol : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
-symbol = anyOf $ String.toList "!#$%&|*+-/:<=>?@^_~"
-
+symbol = anyOf $ String.toList "⊓⊔≤!#$%&|*+-/:<=>?@^_~"
+ 
 -- Anything that isn't a whitespace character
 not-space : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
 not-space = guard (λ c → not (primIsSpace c)) anyTok

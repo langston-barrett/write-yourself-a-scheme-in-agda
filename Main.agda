@@ -1,6 +1,7 @@
 module Main where
 
 open import Agda.Builtin.Equality                using (_≡_ ; refl)
+open import Category.Monad                       using (RawMonad)
 open import Data.Maybe               as Maybe    using (maybe′)
 open import Data.String              as String   using (String ; _++_)
 open import Data.Sum                             using ([_,_]′)
@@ -18,9 +19,10 @@ open import agdARGS.System.Console.Modifiers
 open import agdARGS.System.Console.Options.Usual as Usual hiding (Parser; string)
 
 open import Eval
+open import Language
 open import Parsers
 open import SumUtil
-open import Util
+open import Error
 
 module Main where
   cli : CLI _
@@ -42,6 +44,7 @@ module Main where
   -- "real main", moved out of IO for better unit testing
   realMain : String → String
   realMain args = [ show-error , show ]′ (parse args >>= eval)
+    where open RawMonad (monadₗ Error _)
 
   main : _
   main = withCLI cli (putStrLn ∘ maybe′ realMain "[ERR] Bad arguments!" ∘ helper)

@@ -1,7 +1,7 @@
 module SumUtil where
 
 open import Category.Functor
-open import Category.Monad
+open import Category.Monad                   using (RawMonad)
 open import Data.List           as List      using (List ; [] ; _∷_)
 open import Data.List.NonEmpty  as NonEmpty  renaming (map to map⁺ ; foldl to foldl⁺)
                                              hiding (lift)
