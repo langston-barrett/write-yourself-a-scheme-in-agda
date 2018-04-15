@@ -1,6 +1,7 @@
 module Language where
 
-open import Function                            using    (id ; _∘_)
+open import Category.Monad
+open import Function                            using    (id ; _∘_ ; _$_)
 open import Data.List                           using    (List ; _∷_ ; map ; [])
 open import Data.List.NonEmpty                  renaming (map to map⁺)
 open import Data.Integer             as Integer using    (ℤ)
@@ -35,7 +36,7 @@ module LispM where
     integer     : ℤ → Lisp
     string      : String → Lisp
     quoted      : ∀ {j : Size< i} → Lisp {j} → Lisp
-    -- enhancement this should be made into vectors of length > 1
+    -- enhancement: this should be made into vectors of length > 1
     list        : ∀ {j : Size< i} → List⁺ (Lisp {j}) → Lisp
 
   -- ----------------- SHOW
@@ -76,6 +77,8 @@ castM M T = M LispM.Lisp → errorOr (M T)
 
 module Cast where
 
+  open RawMonad (monadₗ Error zero)
+
   constructor-name : LispM.Lisp → String
   constructor-name (LispM.atom x)    = "atom"
   constructor-name (LispM.bool x)    = "bool"
@@ -85,12 +88,18 @@ module Cast where
   constructor-name (LispM.list x)    = "list"
 
   integer : cast ℤ
-  integer (LispM.integer x) = inj₂ x
-  integer x                 = inj₁ (err-type "integer" (constructor-name x))
+  integer (LispM.integer x) = return x
+  integer x                 = throw $ err-type "integer" (constructor-name x)
+    where
 
   bool : cast Bool
-  bool (LispM.bool x) = inj₂ x
-  bool x             = inj₁ (err-type "bool" (constructor-name x))
+  bool (LispM.bool x) = return x
+  bool x              = throw $ (err-type "bool" (constructor-name x))
+
+  quoted-list⁺ : cast (List⁺ LispM.Lisp)
+  quoted-list⁺ (LispM.quoted (LispM.list x)) = return x
+  quoted-list⁺ (LispM.quoted _) = throw $ err-type "quoted list" "quoted non-list"
+  quoted-list⁺ _ = throw $ err-type "quoted list" "non-quoted term"
 
   list : ∀ {A : Set} → cast A → castM List A
   list c = sequenceᵣ ∘ (map c)

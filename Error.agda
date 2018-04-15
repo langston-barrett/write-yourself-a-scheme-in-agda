@@ -22,10 +22,13 @@ show-error (err-parse str)    = "[ERR] No parse: " ++ str
 show-error (err-undefined u)  = "[ERR] Undefined: " ++ u
 show-error (err-type exp act) = "[ERR]: Expected " ++ exp ++ ", found " ++ act
 show-error (err-arity₀ f)  =
-  "[ERR] Function " ++ f ++ "called with no arguments when some were expected."
+  "[ERR] Function " ++ f ++ " called with no arguments when some were expected."
 show-error (err-arity x y f)  =
-  "[ERR] Function " ++ f ++ "called with " ++
+  "[ERR] Function " ++ f ++ " called with " ++
   show y ++ " arguments when " ++ show x ++ " were expected."
 
 errorOr : ∀ {a} (A : Set a) → (Set a)
 errorOr t = Error ⊎ t
+
+throw : ∀ {a} {A : Set a} → Error → errorOr A
+throw = inj₁
