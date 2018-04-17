@@ -87,15 +87,15 @@ unary : (Lisp → errorOr Lisp) → String → List⁺ Lisp → errorOr Lisp
 unary f _ (x ∷ []) = f x
 unary f name xs = throw $ err-arity 1 (length⁺ xs) name
 
--- car : List⁺ Lisp → errorOr Lisp
--- car = unary (λ x → head <$> quoted-list⁺ x) "car"
+car : List⁺ Lisp → errorOr Lisp
+car = unary (λ x → head <$> quoted-list⁺ x) "car"
 
--- cdr : List⁺ Lisp → errorOr Lisp
--- cdr = unary (λ x → (tail <$> quoted-list⁺ x) >>= atomOrList⁺) "cdr"
---   where atomOrList⁺ : List Lisp → errorOr Lisp
---         atomOrList⁺ [] = throw $ err-type "list" "singleton"
---         atomOrList⁺ (x ∷ []) = return x
---         atomOrList⁺ (x ∷ xs) = return $ Lisp.list (x ∷ xs)
+cdr : List⁺ Lisp → errorOr Lisp
+cdr = unary (λ x → (tail <$> quoted-list⁺ x) >>= atomOrList⁺) "cdr"
+  where atomOrList⁺ : List Lisp → errorOr Lisp
+        atomOrList⁺ [] = throw $ err-type "list" "singleton"
+        atomOrList⁺ (x ∷ []) = return x
+        atomOrList⁺ (x ∷ xs) = return $ Lisp.list (x ∷ xs)
 
 -- Application of a primitive function
 apply : String → List⁺ Lisp → errorOr Lisp
@@ -108,7 +108,8 @@ apply fun args =
   else if (fun == "≤") ∨ (fun == "<=")  then
     int-bool-lisp⁺ (λ b x y → b ∧ ⌊ x ≤? y ⌋) (λ x → (true , x)) args
   else if (fun == "=")   then return $ Lisp.bool $ equal args
-  -- else if (fun == "car") then car args
+  else if (fun == "car") then car args
+  else if (fun == "cdr") then cdr args
   else                        throw $ Error.err-undefined fun
 
 -- ----------------- EVALUATION
