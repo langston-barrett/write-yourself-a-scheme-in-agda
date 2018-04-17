@@ -15,7 +15,7 @@ open import Text.Parser.Char                     using  (spaces)
 open import Text.Parser.Combinators              using  (Parser ; _&>_ ; box)
 open import Text.Parser.Success      as Success
 
-open import Language as Language hiding (atom ; integer ; list ; string)
+open import Language as Language hiding (atom ; quoted ; integer ; list ; string)
 open import Parsers
 
 -- ---------------------------------------------- test functions
@@ -103,8 +103,20 @@ open import Function
 open import Text.Parser.Combinators
 open import Data.List.NonEmpty hiding ([_])
 
-p : [ Parser Char (∣List Char ∣≡_) Maybe (List⁺ Lisp) ]
-p = sepBy maybe-quoted $ box spaces
+-- ---------------------------------------------- quoted
+
+test-quoted : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ] → String → Lisp → Set
+test-quoted parser str lsp =
+  test-parser (quoted (box parser)) str (Language.quoted lsp)
+
+_ : test-quoted atom "'f" (Language.atom "f")
+_ = refl
+
+_ : test-quoted integer "'1" (Language.integer (pos 1))
+_ = refl
+
+_ : test-quoted expr  "'(true false)" (Language.list (Language.bool true ∷⁺ (Language.bool false ∷ [])))
+_ = refl
 
 -- ---------------------------------------------- expr
 
@@ -121,4 +133,7 @@ _ : test-parser expr "(= 2 3)" (Language.list (Language.atom "=" ∷⁺ (Languag
 _ = refl
 
 _ : test-parser expr "(- 1 2 3)" (Language.list (Language.atom "-" ∷⁺ (Language.integer (pos 1) ∷⁺ (Language.integer (pos 2) ∷⁺ (Language.integer (pos 3) ∷ [])))))
+_ = refl
+
+_ : test-parser expr "(f '1)" (Language.list ((Language.atom "f") ∷⁺ (Language.quoted (Language.integer (pos 1)))  ∷ []))
 _ = refl

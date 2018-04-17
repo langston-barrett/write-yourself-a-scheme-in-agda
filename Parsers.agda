@@ -74,7 +74,7 @@ module _ {Tok : Set} {Toks : _} {{𝕊 : Sized Tok Toks}}
 -- Valid symbols to begin identifiers
 symbol : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
 symbol = anyOf $ String.toList "⊓⊔≤!#$%&|*+-/:<=>?@^_~"
- 
+
 -- Anything that isn't a whitespace character
 not-space : [ Parser Char (∣List Char ∣≡_) Maybe Char ]
 not-space = guard (λ c → not (primIsSpace c)) anyTok
@@ -95,6 +95,10 @@ between-quotes = between-chars '"' '"'
 -- Something between parentheses
 between-parens : ∀ {A} → [ □ Parser _ _ _ A ⟶ Parser _ _ _ A ]
 between-parens = between-chars '(' ')'
+
+-- Something prefixed by a "'"
+single-quoted : ∀ {A} → [ □ Parser Char (∣List Char ∣≡_) Maybe A ⟶ Parser Char (∣List Char ∣≡_) Maybe A ]
+single-quoted parser = exact '\'' &> parser
 
 -- ----------------- SPECIALIZED
 
@@ -128,18 +132,22 @@ atom =
 integer : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 integer = Language.integer <$> decimalℤ
 
+-- Take a parser for "e", return one that parses "'e" (with a single quote)
+quoted : [ □ Parser Char _ Maybe Lisp ⟶ Parser Char _ Maybe Lisp ]
+quoted parser = Lisp.quoted <$> (single-quoted parser)
+
+-- The above, but with only possible quotation
+maybe-quoted : [ Parser Char _ Maybe Lisp ⟶ Parser Char _ Maybe Lisp ]
+maybe-quoted parser = parser <|> quoted (box parser)
+
 -- Basic, unquoted, non-list expressions
 base-expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 base-expr = integer <|> string <|> atom
 
--- The above, with possible quotation
-maybe-quoted : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
-maybe-quoted = base-expr <|> Lisp.quoted <$> (exact '\'' &> (box base-expr))
-
 expr : [ Parser Char (∣List Char ∣≡_) Maybe Lisp ]
 expr = fix (Parser Char (∣List Char ∣≡_) Maybe Lisp) $ λ rec →
-  maybe-quoted
-  <|> Lisp.list <$> between-parens (Strong.map (λ p → sepBy p (box spaces)) rec)
+  maybe-quoted base-expr <|>
+  maybe-quoted (Lisp.list <$> between-parens (Strong.map (λ p → sepBy p (box spaces)) rec))
 
 -- The main external interface
 parse : String → errorOr Lisp
