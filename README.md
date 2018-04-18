@@ -33,12 +33,21 @@ or not they're implemented:
  - [ ] Towards a Standard Library: Fold and Unfold
  - [ ] Conclusion & Further Resources
  
-<!--
-## Features
+## (Non)-features
 
 This Scheme doesn't come nearly as close to the one in that Wikibook
 to being [R5RS](http://www.schemers.org/Documents/Standards/R5RS/HTML/)-compliant.
-This flexibility allows for some interesting features:
+In particular, it is missing:
+
+ * Dotted lists
+ * Multiple kinds of equality
+ 
+The focus is on practical programming with Agda, not on getting everything right
+or creating a "true" Scheme.
+ 
+<!--
+## Features
+
 
  1. Variadic primitives: There are combinators for constructing primitive
     functions. One such combinator takes binary functions on `Lisp`
