@@ -54,7 +54,7 @@ _ = refl
 _ : show∘eval∘parse "(if (≤ 2 5) false true)" ≡ inj₂ "false"
 _ = refl
 
--- TODO: this test causes a massive slowdown?
+-- TODO: this test causes a massive slowdown if a big int is used
 -- _ : show∘eval∘parse "(if (≤ 2 5) true true true)" ≡ inj₂ "false"
 -- _ = refl
 

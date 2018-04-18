@@ -25,7 +25,7 @@ or not they're implemented:
  - [x] Parsing
  - [x] Evaluation, Part 1
  - [x] Error Checking and Exceptions
- - [ ] Evaluation, Part 2
+ - [x] Evaluation, Part 2
  - [ ] Building a REPL: Basic I/O
  - [ ] Adding Variables and Assignment: Mutable State in Haskell
  - [ ] Defining Scheme Functions: Closures and Environments

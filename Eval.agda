@@ -13,6 +13,7 @@ open import Data.Product        as Product   using (proj₁ ; proj₂ ; _,_ ; _�
 open import Function                         using (_$_ ; _∘_ ; id)
 open import Level
 open import Relation.Nullary.Decidable       using (⌊_⌋)
+open import Size
 
 open import Error
 open import Language
@@ -74,6 +75,20 @@ int-bool-lisp⁺ : (Bool → ℤ → ℤ → Bool) → (ℤ → (Bool × ℤ))
                → List⁺ Lisp → errorOr Lisp
 int-bool-lisp⁺ = int-lisp⁺ Lisp.bool
 
+-- ----------------- ARITY
+
+-- Used to implement unary-only functions
+unary : String → (Lisp → errorOr Lisp) → List⁺ Lisp → errorOr Lisp
+unary _ f (x ∷ []) = f x
+unary name f xs = throw $ err-arity 1 (length⁺ xs) name
+
+-- Used to implement binary-only functions
+-- TODO: should curry when one argument is given
+binary : String → (Lisp → Lisp → errorOr Lisp) → List⁺ Lisp → errorOr Lisp
+binary _ f (x ∷ (y ∷ [])) = f x y
+binary name f (x ∷ []) = throw $ err-arity 2 1 name
+binary name f xs = throw $ err-arity 2 (length⁺ xs) name
+
 -- ----------------- PRIMITIVES
 
 -- -- Variadic, recursive equality!
@@ -82,20 +97,17 @@ equal = proj₁ ∘ foldl⁺ helper (λ lsp → ( true , lsp ))
   where helper : Bool × Lisp → Lisp → Bool × Lisp
         helper (b , lsp₁) lsp₂ = (b ∧ lsp₁ ≟ lsp₂ , lsp₂)
 
--- Used to implement unary-only functions
-unary : (Lisp → errorOr Lisp) → String → List⁺ Lisp → errorOr Lisp
-unary f _ (x ∷ []) = f x
-unary f name xs = throw $ err-arity 1 (length⁺ xs) name
-
 car : List⁺ Lisp → errorOr Lisp
-car = unary (λ x → head <$> quoted-list⁺ x) "car"
+car = unary "car" (λ x → head <$> quoted-list⁺ x)
 
 cdr : List⁺ Lisp → errorOr Lisp
-cdr = unary (λ x → (tail <$> quoted-list⁺ x) >>= atomOrList⁺) "cdr"
-  where atomOrList⁺ : List Lisp → errorOr Lisp
-        atomOrList⁺ [] = throw $ err-type "list" "singleton"
-        atomOrList⁺ (x ∷ []) = return x
-        atomOrList⁺ (x ∷ xs) = return $ Lisp.list (x ∷ xs)
+cdr = unary "cdr" (λ x → (Lisp.list <$> (tail <$> quoted-list⁺ x)))
+
+cons : List⁺ Lisp → errorOr Lisp
+cons = binary "cons" (λ x y → return $ consHelper x y)
+  where consHelper : ∀ {i} {j : Size< i}→ Lisp {j} → Lisp {j} → Lisp {i}
+        consHelper x (Lisp.list xs) = Lisp.list (x ∷ xs)
+        consHelper x y = Lisp.list (x ∷ y ∷ [])
 
 -- Application of a primitive function
 apply : String → List⁺ Lisp → errorOr Lisp
@@ -120,10 +132,13 @@ eval : ∀ {i} → Lisp {i} → errorOr Lisp
 
 -- ----------------- IF
 
+-- TODO: throw type error on non-bool arguments
 eval (list (atom "if" ∷ arg₁ ∷ arg₂ ∷ arg₃ ∷ [])) =
   eval arg₁ >>= λ b → if b ≟ Lisp.bool true then eval arg₂ else eval arg₃
 
 eval (list (atom "if" ∷ args)) = throw $ err-arity 3 (length args) "if"
+
+-- ----------------- CASE
 
 -- ----------------- FUNCTIONS
 

@@ -15,6 +15,11 @@ with pkgs; stdenv.mkDerivation rec {
     (haskellPackages.ghcWithPackages (pkgs: with pkgs; [ieee text]))
   ];
 
+  # What to run when people run nix-shell
+  # shellHook = ''
+  #   export PROMPT="[nix shell] $PROMPT"
+  # '';
+
   buildPhase = ''
     # Travis error: https://api.travis-ci.org/v3/job/333153489/log.txt
     if [[ -n "$TRAVIS" ]]; then
