@@ -61,6 +61,9 @@ _ = refl
 _ : show∘eval∘parse "(car 5)" ≡ inj₁ (err-type "quoted list" "non-quoted term")
 _ = refl
 
+_ : show∘eval∘parse "(car '())" ≡ inj₁ (err-type "nonempty list" "empty list")
+_ = refl
+
 _ : show∘eval∘parse "(car '(5 2 1))" ≡ inj₂ "5"
 _ = refl
 

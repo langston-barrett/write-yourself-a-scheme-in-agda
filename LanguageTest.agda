@@ -4,10 +4,10 @@ open import Agda.Builtin.Equality                using  (_≡_; refl)
 open import Data.String              as String   hiding (_==_ ; _≟_)
 open import Data.Bool                as Bool     using  (true ; false)
 open import Function
-open import Data.Maybe               as Maybe    using  (Maybe)
+open import Data.Maybe               as Maybe    using  (Maybe; map)
 open import Data.Maybe
 open import Category.Functor         as Functor  using  (RawFunctor)
-open import Text.Parser.Success      as Success
+open import Text.Parser.Success      as Success  hiding (map)
 
 open import Parsers
 open import Language
@@ -21,9 +21,7 @@ open RawFunctor
 -- parse something, then show it
 show∘parse : String → Maybe String
 show∘parse args =
-  RawFunctor._<$>_
-    Maybe.functor
-    (Language.show ∘ Success.value) (Parsers.parseit! Parsers.expr args)
+  map (Language.show ∘ Success.value) (Parsers.parseit! Parsers.expr args)
 
 -- make sure show∘parse = id
 test-show∘parse : String → Set
@@ -42,10 +40,11 @@ _ : test-show∘parse "'quoted"
 _ = refl
 
 -- integer: TODO this takes forever?
-_ : test-show∘parse "1234"
+_ : test-show∘parse "12"
 _ = refl
 
 -- list
+-- TODO: print this without an extra space!
 _ : test-show∘parse "(true false)"
 _ = refl
 

@@ -4,8 +4,8 @@ open import Agda.Builtin.Equality                using  (_≡_; refl)
 open import Agda.Builtin.Int                     using  (pos)
 open import Data.Bool                            using  (true ; false)
 open import Data.Char                as Char
-open import Data.List                            using  ([])
-open import Data.List.NonEmpty       as NonEmpty using  (_∷_; _∷⁺_)
+open import Data.List                            hiding ([_])
+-- open import Data.List.NonEmpty       as NonEmpty using  (_∷_; _∷⁺_)
 open import Data.List.Sized                      hiding (list)
 open import Data.Maybe               as Maybe    using  (Maybe ; maybe′)
 open import Data.String              as String   hiding (_==_)
@@ -115,25 +115,28 @@ _ = refl
 _ : test-quoted integer "'1" (Language.integer (pos 1))
 _ = refl
 
-_ : test-quoted expr  "'(true false)" (Language.list (Language.bool true ∷⁺ (Language.bool false ∷ [])))
+_ : test-quoted expr  "'(true false)" (Language.list (Language.bool true ∷ (Language.bool false ∷ [])))
 _ = refl
 
 -- ---------------------------------------------- expr
 
-_ : test-parser expr "(f true 10)" (Language.list (Language.atom "f" ∷⁺ (Language.bool true ∷⁺ (Language.integer (pos 10) ∷ []))))
+_ : test-parser expr "(f true 10)" (Language.list (Language.atom "f" ∷ (Language.bool true ∷ (Language.integer (pos 10) ∷ []))))
 _ = refl
 
 _ : test-parser expr "\"str\"" (Language.string "str")
 _ = refl
 
-_ : test-parser expr "(false (false true))" (Language.list (Language.bool false ∷⁺ Language.list (Language.bool false ∷⁺ (Language.bool true ∷ [])) ∷ []))
+_ : test-parser expr "(false (false true))" (Language.list (Language.bool false ∷ Language.list (Language.bool false ∷ (Language.bool true ∷ [])) ∷ []))
 _ = refl
 
-_ : test-parser expr "(= 2 3)" (Language.list (Language.atom "=" ∷⁺ (Language.integer (pos 2) ∷⁺ (Language.integer (pos 3) ∷ []))))
+_ : test-parser expr "(= 2 3)" (Language.list (Language.atom "=" ∷ (Language.integer (pos 2) ∷ (Language.integer (pos 3) ∷ []))))
 _ = refl
 
-_ : test-parser expr "(- 1 2 3)" (Language.list (Language.atom "-" ∷⁺ (Language.integer (pos 1) ∷⁺ (Language.integer (pos 2) ∷⁺ (Language.integer (pos 3) ∷ [])))))
+_ : test-parser expr "(- 1 2 3)" (Language.list (Language.atom "-" ∷ (Language.integer (pos 1) ∷ (Language.integer (pos 2) ∷ (Language.integer (pos 3) ∷ [])))))
 _ = refl
 
-_ : test-parser expr "(f '1)" (Language.list ((Language.atom "f") ∷⁺ (Language.quoted (Language.integer (pos 1)))  ∷ []))
+_ : test-parser expr "(f '1)" (Language.list ((Language.atom "f") ∷ (Language.quoted (Language.integer (pos 1)))  ∷ []))
+_ = refl
+
+_ : test-parser expr "()" (Language.list [])
 _ = refl

@@ -2,8 +2,8 @@ module Language where
 
 open import Category.Monad
 open import Function                            using    (id ; _∘_ ; _$_)
-open import Data.List                           using    (List ; _∷_ ; map ; [])
-open import Data.List.NonEmpty                  renaming (map to map⁺)
+open import Data.List                           hiding   (_++_)
+open import Data.List.NonEmpty                  renaming (map to map⁺; foldr to foldr⁺)
 open import Data.Integer             as Integer using    (ℤ)
 open import Data.Bool                as Bool    hiding   (_≟_)
 open import Data.Bool.Show                      renaming (show to Bool-show)
@@ -37,7 +37,7 @@ module LispM where
     string      : String → Lisp
     quoted      : ∀ {j : Size< i} → Lisp {j} → Lisp
     -- enhancement: this should be made into vectors of length > 1
-    list        : ∀ {j : Size< i} → List⁺ (Lisp {j}) → Lisp
+    list        : ∀ {j : Size< i} → List (Lisp {j}) → Lisp
 
   -- ----------------- SHOW
 
@@ -47,8 +47,10 @@ module LispM where
   show (integer i)          = Integer.show i
   show (quoted x)           = "'" ++ show x
   show (string x)           = "\"" ++ x ++ "\""
-  show (list lst) =
-    "(" ++ (foldr (λ hd acc → hd ++ " " ++ acc) id (map⁺ show lst)) ++ ")"
+  show (list [])            = "()"
+  show (list (x ∷ []))      = "(" ++ show x ++ ")"
+  show (list (x ∷ xs))      =
+    "(" ++ show x ++ (foldr (λ hd acc → " " ++ hd ++ acc) "" (map show xs)) ++ ")"
 
   -- ----------------- EQUALITY
 
@@ -97,7 +99,9 @@ module Cast where
   bool x              = throw $ (err-type "bool" (constructor-name x))
 
   quoted-list⁺ : cast (List⁺ LispM.Lisp)
-  quoted-list⁺ (LispM.quoted (LispM.list x)) = return x
+  quoted-list⁺ (LispM.quoted (LispM.list (x ∷ xs))) = return (x ∷ xs)
+  quoted-list⁺ (LispM.quoted (LispM.list [])) =
+    throw $ err-type "nonempty list" "empty list"
   quoted-list⁺ (LispM.quoted _) = throw $ err-type "quoted list" "quoted non-list"
   quoted-list⁺ _ = throw $ err-type "quoted list" "non-quoted term"
 
@@ -110,7 +114,7 @@ module Cast where
   integers : castM List ℤ
   integers = list integer
 
-  integers⁺ : castM List⁺ ℤ
-  integers⁺ = list⁺ integer
+  -- integers⁺ : castM List ℤ
+  -- integers⁺ = list⁺ integer
 
 open LispM public
